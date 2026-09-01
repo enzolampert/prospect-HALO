@@ -1,0 +1,1201 @@
+<meta charset="utf-8">
+<title>Radar HALO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --bg: #F4F6F3;
+    --surface: #FFFFFF;
+    --surface-2: #EDF1EC;
+    --ink: #15201C;
+    --muted: #57665F;
+    --faint: #869890;
+    --line: #E1E6E0;
+    --halo: #0C9E7A;
+    --halo-bright: #10B78E;
+    --halo-wash: #E3F4EE;
+    --warm: #DE7A45;
+    --good: #2F9E68;
+    --warn: #BE861F;
+    --crit: #CD5344;
+    --ring-track: #E1E6E0;
+    --shadow-sm: 0 1px 2px rgba(21,32,28,.06);
+    --shadow-md: 0 1px 2px rgba(21,32,28,.05), 0 14px 34px -16px rgba(21,32,28,.20);
+    --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+    --font-ui: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --r: 14px;
+    --r-sm: 9px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0D1311;
+      --surface: #151C19;
+      --surface-2: #1D2622;
+      --ink: #E8EEEA;
+      --muted: #9CAAA2;
+      --faint: #6B7A72;
+      --line: #27312C;
+      --halo: #2ED0A5;
+      --halo-bright: #45E2B8;
+      --halo-wash: #10302A;
+      --warm: #EE9160;
+      --good: #45B57E;
+      --warn: #DDA33F;
+      --crit: #E86B5E;
+      --ring-track: #27312C;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.35);
+      --shadow-md: 0 1px 2px rgba(0,0,0,.35), 0 16px 40px -18px rgba(0,0,0,.6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0D1311;
+    --surface: #151C19;
+    --surface-2: #1D2622;
+    --ink: #E8EEEA;
+    --muted: #9CAAA2;
+    --faint: #6B7A72;
+    --line: #27312C;
+    --halo: #2ED0A5;
+    --halo-bright: #45E2B8;
+    --halo-wash: #10302A;
+    --warm: #EE9160;
+    --good: #45B57E;
+    --warn: #DDA33F;
+    --crit: #E86B5E;
+    --ring-track: #27312C;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.35);
+    --shadow-md: 0 1px 2px rgba(0,0,0,.35), 0 16px 40px -18px rgba(0,0,0,.6);
+  }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; }
+
+  button, input, select, textarea { font: inherit; color: inherit; }
+
+  :focus-visible {
+    outline: 2px solid var(--halo);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* ---------- Shell ---------- */
+  .wrap { max-width: 1360px; margin: 0 auto; padding: 0 clamp(14px, 3vw, 34px) 80px; }
+
+  header.top {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px 24px;
+    padding: 34px 0 24px;
+    overflow: hidden;
+  }
+  header.top::before {
+    content: "";
+    position: absolute;
+    top: -160px; left: -80px;
+    width: 340px; height: 340px;
+    background: radial-gradient(circle at center, color-mix(in srgb, var(--halo) 26%, transparent), transparent 68%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .brand { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; }
+  .brand .glyph { width: 34px; height: 34px; flex: none; }
+  .brand .glyph circle { fill: none; stroke: var(--halo); }
+  .wordmark { display: flex; flex-direction: column; line-height: 1; }
+  .wordmark b {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: 30px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .wordmark span {
+    margin-top: 6px;
+    font-size: 11.5px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .top-actions { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 15px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: border-color .14s, background .14s, transform .06s;
+  }
+  .btn:hover { border-color: var(--halo); }
+  .btn:active { transform: translateY(1px); }
+  .btn svg { width: 15px; height: 15px; }
+  .btn-primary { background: var(--halo); border-color: var(--halo); color: #fff; }
+  .btn-primary:hover { background: var(--halo-bright); border-color: var(--halo-bright); }
+  :root[data-theme="dark"] .btn-primary, :root:not([data-theme="light"]) .btn-primary { color: #08130F; }
+  .btn-ghost { background: transparent; }
+
+  /* ---------- Layout ---------- */
+  .layout { display: grid; grid-template-columns: 288px 1fr; gap: 26px; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  /* ---------- Filter rail ---------- */
+  .rail {
+    position: sticky; top: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    box-shadow: var(--shadow-sm);
+    padding: 6px 0;
+    max-height: calc(100vh - 28px);
+    overflow: auto;
+  }
+  @media (max-width: 900px) {
+    .rail { position: static; max-height: none; }
+  }
+  .rail-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px 10px;
+  }
+  .rail-head h2 {
+    margin: 0; font-family: var(--font-ui); font-size: 12px;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+  }
+  .link-btn {
+    border: 0; background: none; padding: 4px 6px; cursor: pointer;
+    font-size: 12px; font-weight: 600; color: var(--halo);
+  }
+  .fgroup { padding: 12px 16px; border-top: 1px solid var(--line); }
+  .fgroup > label.h {
+    display: block; margin-bottom: 9px;
+    font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600;
+  }
+  .field { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface-2); }
+  .field::placeholder { color: var(--faint); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .dash { text-align: center; color: var(--faint); align-self: center; }
+  .hint { margin-top: 6px; font-size: 11px; color: var(--faint); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--muted);
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .12s, background .12s, color .12s;
+  }
+  .chip:hover { border-color: var(--halo); }
+  .chip[aria-pressed="true"] {
+    background: var(--halo-wash);
+    border-color: var(--halo);
+    color: var(--halo);
+  }
+  .chip.focus-chip::after {
+    content: "";
+    display: inline-block; width: 5px; height: 5px; margin-left: 6px; border-radius: 50%;
+    background: var(--halo); vertical-align: middle;
+  }
+
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .seg button {
+    flex: 1; border: 0; background: var(--surface-2); color: var(--muted);
+    padding: 7px 4px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--halo); color: #fff; }
+  :root[data-theme="dark"] .seg button[aria-pressed="true"], :root:not([data-theme="light"]) .seg button[aria-pressed="true"] { color: #08130F; }
+
+  input[type="range"] { width: 100%; accent-color: var(--halo); }
+  .range-val { display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: var(--muted); }
+  .range-val b { color: var(--ink); font-weight: 600; }
+
+  .switch { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; font-weight: 600; }
+  .switch input { position: absolute; opacity: 0; pointer-events: none; }
+  .switch .track {
+    width: 38px; height: 22px; border-radius: 999px; background: var(--surface-2);
+    border: 1px solid var(--line); position: relative; flex: none; transition: background .14s, border-color .14s;
+  }
+  .switch .track::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--faint); transition: transform .16s, background .16s;
+  }
+  .switch input:checked + .track { background: var(--halo-wash); border-color: var(--halo); }
+  .switch input:checked + .track::after { transform: translateX(16px); background: var(--halo); }
+
+  /* ---------- Main column ---------- */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 13px 15px;
+    box-shadow: var(--shadow-sm);
+  }
+  .stat .k { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .stat .v {
+    font-family: var(--font-display); font-optical-sizing: auto; font-weight: 500;
+    font-size: 27px; line-height: 1.1; margin-top: 5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .v small { font-family: var(--font-ui); font-size: 13px; font-weight: 600; color: var(--faint); }
+
+  .toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .toolbar .count { font-size: 13px; color: var(--muted); }
+  .toolbar .count b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .toolbar .spacer { flex: 1; }
+  .sortsel { padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-weight: 600; font-size: 13px; cursor: pointer; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(298px, 1fr));
+    gap: 14px;
+  }
+
+  .card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: border-color .14s, box-shadow .14s, transform .14s;
+    display: flex; flex-direction: column; gap: 11px;
+  }
+  .card:hover { border-color: color-mix(in srgb, var(--halo) 55%, var(--line)); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+  .card-top { display: flex; gap: 12px; align-items: flex-start; }
+  .avatar {
+    width: 46px; height: 46px; flex: none; position: relative;
+    display: grid; place-items: center;
+  }
+  .avatar svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .avatar .track { fill: none; stroke: var(--ring-track); stroke-width: 3; }
+  .avatar .arc { fill: none; stroke: var(--halo); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset .4s; }
+  .avatar b {
+    font-family: var(--font-display); font-weight: 600; font-size: 15px;
+    color: var(--ink); z-index: 1; letter-spacing: .02em;
+  }
+  .who { min-width: 0; flex: 1; }
+  .who .name { font-weight: 700; font-size: 15px; line-height: 1.25; }
+  .who .handle { font-family: var(--font-mono); font-size: 12px; color: var(--halo); word-break: break-all; }
+
+  .prio { text-align: right; flex: none; }
+  .prio .num {
+    font-family: var(--font-display); font-optical-sizing: auto; font-weight: 500;
+    font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .prio .lbl { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); font-weight: 600; }
+
+  .meta { font-size: 12.5px; color: var(--muted); }
+  .meta .mono { font-family: var(--font-mono); color: var(--ink); }
+  .dot-sep { margin: 0 6px; color: var(--faint); }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag {
+    font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 999px;
+    background: var(--surface-2); color: var(--muted); border: 1px solid transparent;
+  }
+  .tag.focus { background: var(--halo-wash); color: var(--halo); border-color: color-mix(in srgb, var(--halo) 35%, transparent); }
+
+  .prox { display: flex; align-items: center; gap: 8px; }
+  .prox .pips { display: flex; gap: 3px; flex: none; }
+  .prox .pips i { width: 8px; height: 8px; border-radius: 50%; background: var(--ring-track); display: block; }
+  .prox .pips i.on { background: var(--warm); }
+  .prox .plabel { font-size: 12px; color: var(--muted); }
+
+  .note { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+
+  .card-foot { display: flex; align-items: center; gap: 8px; padding-top: 11px; border-top: 1px solid var(--line); }
+  .statussel {
+    flex: 1; padding: 6px 9px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--surface-2); font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .status-A .statussel { color: var(--warm); }
+  .status-C .statussel { color: var(--muted); }
+  .status-E .statussel { color: var(--halo); }
+  .status-F .statussel { color: var(--good); }
+  .status-D .statussel { color: var(--faint); }
+  .icon-btn {
+    width: 30px; height: 30px; flex: none; border: 1px solid var(--line); background: var(--surface);
+    border-radius: 8px; display: grid; place-items: center; cursor: pointer;
+  }
+  .icon-btn:hover { border-color: var(--halo); }
+  .icon-btn svg { width: 14px; height: 14px; }
+  .icon-btn.danger:hover { border-color: var(--crit); color: var(--crit); }
+
+  .empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    border: 1px dashed var(--line);
+    border-radius: var(--r);
+    color: var(--muted);
+  }
+  .empty b { display: block; font-family: var(--font-display); font-size: 20px; color: var(--ink); margin-bottom: 6px; font-weight: 500; }
+
+  /* ---------- Dialog ---------- */
+  dialog {
+    width: min(560px, 94vw);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 0;
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow-md);
+  }
+  dialog::backdrop { background: rgba(12,18,16,.5); backdrop-filter: blur(2px); }
+  .dlg-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+  .dlg-head h3 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 19px; }
+  .dlg-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 15px; max-height: 66vh; overflow: auto; }
+  .dlg-foot { display: flex; justify-content: space-between; gap: 10px; padding: 16px 20px; border-top: 1px solid var(--line); }
+  .form-row { display: flex; flex-direction: column; gap: 6px; }
+  .form-row > label { font-size: 11.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+  .inp { padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface-2); width: 100%; }
+  textarea.inp { resize: vertical; min-height: 62px; }
+  .req { color: var(--crit); }
+
+  .ship {
+    border: 1px dashed color-mix(in srgb, var(--halo) 45%, var(--line));
+    background: var(--halo-wash);
+    border-radius: 10px;
+    padding: 9px 11px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .ship-h { font-size: 10px; letter-spacing: .11em; text-transform: uppercase; color: var(--halo); font-weight: 700; }
+  .ship-line { font-size: 12px; color: var(--ink); }
+  .ship-line b { font-weight: 700; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; margin-right: 3px; }
+  .ship-addr { font-size: 12px; color: var(--muted); white-space: pre-wrap; }
+  .ship-addr.pending { color: var(--warn); font-style: italic; }
+
+  .ship-form {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 15px;
+    background: var(--surface-2);
+    transition: border-color .15s, background .15s;
+  }
+  .ship-form.active { border-color: color-mix(in srgb, var(--halo) 55%, var(--line)); background: var(--halo-wash); }
+  .ship-form .sh-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 700;
+  }
+  .ship-form.active .sh-title { color: var(--halo); }
+  .ship-form .sh-note { font-size: 11.5px; color: var(--faint); margin: -6px 0 0; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: var(--bg);
+    padding: 11px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .card { animation: rise .32s ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+  }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg class="glyph" viewBox="0 0 34 34" aria-hidden="true">
+        <circle cx="17" cy="17" r="14" stroke-width="2.5"/>
+        <circle cx="17" cy="17" r="7" stroke-width="2.5" opacity="0.5"/>
+      </svg>
+      <span class="wordmark">
+        <b>Halo</b>
+        <span>Radar de embaixadores</span>
+      </span>
+    </div>
+    <div class="top-actions">
+      <button class="btn btn-ghost" id="btnImport" type="button" title="Importar backup JSON">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13M7 12l5 5 5-5M5 21h14"/></svg>
+        Importar
+      </button>
+      <button class="btn btn-ghost" id="btnExport" type="button" title="Baixar backup JSON">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V8M7 12l5-5 5 5M5 3h14"/></svg>
+        Exportar
+      </button>
+      <button class="btn btn-primary" id="btnNew" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Novo prospect
+      </button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="rail" aria-label="Filtros">
+      <div class="rail-head">
+        <h2>Filtros</h2>
+        <button class="link-btn" id="btnClear" type="button">Limpar</button>
+      </div>
+
+      <div class="fgroup">
+        <label class="h" for="fq">Busca</label>
+        <input class="field" id="fq" type="search" placeholder="Nome, @ ou anotação" autocomplete="off">
+      </div>
+
+      <div class="fgroup">
+        <label class="h">Nicho de atuação</label>
+        <div class="chips" id="fNiches"></div>
+        <p class="hint">● marca os nichos foco (saúde, esporte, fitness, dia a dia)</p>
+      </div>
+
+      <div class="fgroup">
+        <label class="switch">
+          <input type="checkbox" id="fFocusOnly">
+          <span class="track"></span>
+          Apenas nichos foco
+        </label>
+      </div>
+
+      <div class="fgroup">
+        <label class="h">Gênero</label>
+        <div class="seg" id="fGender" role="group" aria-label="Gênero">
+          <button type="button" data-v="todos" aria-pressed="true">Todos</button>
+          <button type="button" data-v="Mulher" aria-pressed="false">Mulher</button>
+          <button type="button" data-v="Homem" aria-pressed="false">Homem</button>
+          <button type="button" data-v="Outro" aria-pressed="false">Outro</button>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label class="h">Idade</label>
+        <div class="row2">
+          <input class="field" id="fAgeMin" type="number" inputmode="numeric" min="13" max="99" placeholder="mín">
+          <input class="field" id="fAgeMax" type="number" inputmode="numeric" min="13" max="99" placeholder="máx">
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label class="h">Nº de seguidores</label>
+        <div class="row2">
+          <input class="field" id="fFolMin" type="text" inputmode="numeric" placeholder="mín (ex: 10000)" autocomplete="off">
+          <input class="field" id="fFolMax" type="text" inputmode="numeric" placeholder="máx (ex: 200000)" autocomplete="off">
+        </div>
+        <div class="chips" id="fTiers" style="margin-top:8px"></div>
+      </div>
+
+      <div class="fgroup">
+        <label class="h" for="fProx">Proximidade mínima</label>
+        <input type="range" id="fProx" min="1" max="5" step="1" value="1">
+        <div class="range-val"><span>Qualquer</span><b id="fProxLbl">1 · Não conheço</b></div>
+      </div>
+
+      <div class="fgroup">
+        <label class="h">Etapa</label>
+        <div class="chips" id="fStatus"></div>
+      </div>
+    </aside>
+
+    <main>
+      <section class="summary" id="summary" aria-label="Resumo"></section>
+
+      <div class="toolbar">
+        <span class="count"><b id="cShown">0</b> de <b id="cTotal">0</b> prospects</span>
+        <span class="spacer"></span>
+        <label class="h" for="sort" style="font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600">Ordenar</label>
+        <select class="sortsel" id="sort">
+          <option value="prioridade">Prioridade</option>
+          <option value="seguidores">Seguidores</option>
+          <option value="proximidade">Proximidade</option>
+          <option value="nome">Nome (A–Z)</option>
+          <option value="recentes">Adicionados recentemente</option>
+        </select>
+      </div>
+
+      <section class="grid" id="grid" aria-live="polite"></section>
+    </main>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog" id="form">
+    <div class="dlg-head">
+      <h3 id="dlgTitle">Novo prospect</h3>
+      <button class="icon-btn" value="cancel" type="submit" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="dlg-body">
+      <div class="form-row">
+        <label for="iName">Nome <span class="req">*</span></label>
+        <input class="inp" id="iName" required maxlength="80">
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="iHandle">@ / perfil</label>
+          <input class="inp" id="iHandle" maxlength="60" placeholder="@usuario">
+        </div>
+        <div class="form-row">
+          <label for="iPlatform">Plataforma</label>
+          <select class="inp" id="iPlatform">
+            <option value="">—</option>
+            <option>Instagram</option><option>TikTok</option><option>YouTube</option>
+            <option>Strava</option><option>Podcast</option><option>Blog</option><option>Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="iGender">Gênero</label>
+          <select class="inp" id="iGender"><option>Mulher</option><option>Homem</option><option>Outro</option></select>
+        </div>
+        <div class="form-row">
+          <label for="iAge">Idade</label>
+          <input class="inp" id="iAge" type="number" inputmode="numeric" min="13" max="99">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Nichos</label>
+        <div class="chips" id="iNiches"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="iFollowers">Seguidores</label>
+          <input class="inp" id="iFollowers" type="text" inputmode="numeric" placeholder="ex: 48000" autocomplete="off">
+        </div>
+        <div class="form-row">
+          <label for="iStatus">Etapa</label>
+          <select class="inp" id="iStatus"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="iProx">Proximidade — <span id="iProxLbl">1 · Não conheço</span></label>
+        <input type="range" id="iProx" min="1" max="5" step="1" value="1">
+      </div>
+      <div class="form-row">
+        <label for="iNote">Anotações</label>
+        <textarea class="inp" id="iNote" maxlength="600" placeholder="Como cheguei nessa pessoa, encaixe com a HALO, próximos passos…"></textarea>
+      </div>
+
+      <div class="ship-form" id="shipForm">
+        <div class="sh-title">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v9l-9 6-9-6z"/><path d="M3 9l9 6 9-6M12 15v6"/></svg>
+          Envio do anel — acordo fechado
+        </div>
+        <p class="sh-note" id="shipNote">Preencha quando a etapa estiver como “Fechado”.</p>
+        <div class="form-row">
+          <label for="iAddress">Endereço de entrega</label>
+          <textarea class="inp" id="iAddress" maxlength="300" placeholder="Rua, número, complemento, bairro, cidade/UF, CEP"></textarea>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="iRingSize">Tamanho do anel</label>
+            <select class="inp" id="iRingSize">
+              <option value="">—</option>
+              <option>Kit de medição enviado</option>
+              <option>US 7</option><option>US 8</option><option>US 9</option>
+              <option>US 10</option><option>US 11</option><option>US 12</option><option>US 13</option>
+              <option>A definir</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="iRingColor">Cor</label>
+            <select class="inp" id="iRingColor">
+              <option value="">—</option>
+              <option>Preto</option><option>Prata</option><option>Dourado</option><option>Bronze</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row" style="max-width:150px">
+          <label for="iRingQty">Quantidade de anéis</label>
+          <input class="inp" id="iRingQty" type="number" inputmode="numeric" min="1" max="50" value="1">
+        </div>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn btn-ghost danger" id="btnDelete" type="button" style="visibility:hidden">Excluir</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" value="cancel" type="submit">Cancelar</button>
+        <button class="btn btn-primary" value="save" type="submit" id="btnSave">Salvar</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var KEY = "halo.radar.v2";
+  var NICHES = [
+    "Atleta", "Fitness / Treino", "Saúde / Medicina", "Bem-estar / Lifestyle",
+    "Corrida", "Yoga / Pilates", "Nutrição",
+    "Blogueiro(a)", "Mídia / Imprensa", "Podcaster", "Empreendedor(a)", "Outro"
+  ];
+  var FOCUS = ["Atleta", "Fitness / Treino", "Saúde / Medicina", "Bem-estar / Lifestyle", "Corrida", "Yoga / Pilates", "Nutrição"];
+  var ADJACENT = ["Blogueiro(a)", "Mídia / Imprensa", "Podcaster"];
+  var STATUSES = ["A contatar", "Contatado", "Em conversa", "Fechado", "Descartado"];
+  var STATUS_CLASS = { "A contatar": "status-A", "Contatado": "status-C", "Em conversa": "status-E", "Fechado": "status-F", "Descartado": "status-D" };
+  var PROX_LABELS = { 1: "Não conheço", 2: "Conexão em comum", 3: "Já interagimos online", 4: "Já conversamos", 5: "Relação próxima" };
+  var TIERS = ["Nano", "Micro", "Médio", "Macro", "Mega"];
+
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  };
+  var uid = function () {
+    return (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+      : "p_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  };
+  var parseNum = function (v) {
+    if (v == null) return null;
+    var n = String(v).replace(/[^\d]/g, "");
+    return n === "" ? null : parseInt(n, 10);
+  };
+
+  function fmtFollowers(n) {
+    n = n || 0;
+    if (n >= 1e6) { var m = n / 1e6; return (m >= 10 ? Math.round(m) : m.toFixed(1).replace(/\.0$/, "").replace(".", ",")) + "M"; }
+    if (n >= 1e3) return Math.round(n / 1e3) + "k";
+    return String(n);
+  }
+  function tierOf(n) {
+    n = n || 0;
+    if (n >= 1e6) return "Mega";
+    if (n >= 2e5) return "Macro";
+    if (n >= 5e4) return "Médio";
+    if (n >= 1e4) return "Micro";
+    return "Nano";
+  }
+  function isFocus(niche) { return FOCUS.indexOf(niche) !== -1; }
+
+  function priority(p) {
+    var niches = p.niches || [];
+    var nicheScore = 8;
+    if (niches.some(isFocus)) nicheScore = 40;
+    else if (niches.some(function (n) { return ADJACENT.indexOf(n) !== -1; })) nicheScore = 22;
+    var proxScore = ((p.proximity || 1) / 5) * 30;
+    var folMap = { Micro: 30, "Médio": 28, Nano: 22, Macro: 18, Mega: 12 };
+    var folScore = folMap[tierOf(p.followers)];
+    if (folScore == null) folScore = 15;
+    return Math.max(0, Math.min(100, Math.round(nicheScore + proxScore + folScore)));
+  }
+
+  /* ---------- state ---------- */
+  var prospects = [];
+  var filters = {
+    q: "", niches: [], focusOnly: false, gender: "todos",
+    ageMin: null, ageMax: null, folMin: null, folMax: null,
+    tiers: [], proxMin: 1, statuses: [], sort: "prioridade"
+  };
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) { prospects = JSON.parse(raw) || []; return; }
+    } catch (e) { /* ignore */ }
+    prospects = [];
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(prospects)); } catch (e) { /* quota / private mode */ }
+  }
+
+  /* ---------- toast ---------- */
+  var toastEl = $("#toast"), toastT;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastT);
+    toastT = setTimeout(function () { toastEl.classList.remove("show"); }, 2600);
+  }
+
+  /* ---------- filter chips build ---------- */
+  function buildChip(container, label, pressed, onToggle, focusMark) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip" + (focusMark ? " focus-chip" : "");
+    b.textContent = label;
+    b.setAttribute("aria-pressed", pressed ? "true" : "false");
+    b.addEventListener("click", function () {
+      var now = b.getAttribute("aria-pressed") !== "true";
+      b.setAttribute("aria-pressed", now ? "true" : "false");
+      onToggle(now);
+    });
+    container.appendChild(b);
+    return b;
+  }
+
+  function toggleIn(arr, val, on) {
+    var i = arr.indexOf(val);
+    if (on && i === -1) arr.push(val);
+    if (!on && i !== -1) arr.splice(i, 1);
+  }
+
+  NICHES.forEach(function (n) {
+    buildChip($("#fNiches"), n, false, function (on) { toggleIn(filters.niches, n, on); render(); }, isFocus(n));
+  });
+  TIERS.forEach(function (t) {
+    buildChip($("#fTiers"), t, false, function (on) { toggleIn(filters.tiers, t, on); render(); });
+  });
+  STATUSES.forEach(function (s) {
+    buildChip($("#fStatus"), s, false, function (on) { toggleIn(filters.statuses, s, on); render(); });
+  });
+
+  /* gender segmented */
+  $$("#fGender button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      $$("#fGender button").forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+      b.setAttribute("aria-pressed", "true");
+      filters.gender = b.dataset.v;
+      render();
+    });
+  });
+
+  $("#fq").addEventListener("input", function () { filters.q = this.value.trim().toLowerCase(); render(); });
+  $("#fFocusOnly").addEventListener("change", function () { filters.focusOnly = this.checked; render(); });
+  $("#fAgeMin").addEventListener("input", function () { filters.ageMin = parseNum(this.value); render(); });
+  $("#fAgeMax").addEventListener("input", function () { filters.ageMax = parseNum(this.value); render(); });
+  $("#fFolMin").addEventListener("input", function () { filters.folMin = parseNum(this.value); render(); });
+  $("#fFolMax").addEventListener("input", function () { filters.folMax = parseNum(this.value); render(); });
+  $("#fProx").addEventListener("input", function () {
+    filters.proxMin = parseInt(this.value, 10);
+    $("#fProxLbl").textContent = filters.proxMin + " · " + PROX_LABELS[filters.proxMin];
+    render();
+  });
+  $("#sort").addEventListener("change", function () { filters.sort = this.value; render(); });
+
+  $("#btnClear").addEventListener("click", function () {
+    filters.q = ""; filters.niches = []; filters.focusOnly = false; filters.gender = "todos";
+    filters.ageMin = filters.ageMax = filters.folMin = filters.folMax = null;
+    filters.tiers = []; filters.proxMin = 1; filters.statuses = [];
+    $("#fq").value = ""; $("#fAgeMin").value = ""; $("#fAgeMax").value = "";
+    $("#fFolMin").value = ""; $("#fFolMax").value = ""; $("#fProx").value = 1;
+    $("#fProxLbl").textContent = "1 · Não conheço";
+    $("#fFocusOnly").checked = false;
+    $$("#fNiches .chip, #fTiers .chip, #fStatus .chip").forEach(function (c) { c.setAttribute("aria-pressed", "false"); });
+    $$("#fGender button").forEach(function (x, i) { x.setAttribute("aria-pressed", i === 0 ? "true" : "false"); });
+    render();
+  });
+
+  /* ---------- filtering + sorting ---------- */
+  function applyFilters() {
+    return prospects.filter(function (p) {
+      if (filters.q) {
+        var hay = (p.name + " " + (p.handle || "") + " " + (p.note || "")).toLowerCase();
+        if (hay.indexOf(filters.q) === -1) return false;
+      }
+      if (filters.focusOnly && !(p.niches || []).some(isFocus)) return false;
+      if (filters.niches.length && !filters.niches.some(function (n) { return (p.niches || []).indexOf(n) !== -1; })) return false;
+      if (filters.gender !== "todos" && p.gender !== filters.gender) return false;
+      if (filters.ageMin != null && (p.age == null || p.age < filters.ageMin)) return false;
+      if (filters.ageMax != null && (p.age == null || p.age > filters.ageMax)) return false;
+      if (filters.folMin != null && (p.followers || 0) < filters.folMin) return false;
+      if (filters.folMax != null && (p.followers || 0) > filters.folMax) return false;
+      if (filters.tiers.length && filters.tiers.indexOf(tierOf(p.followers)) === -1) return false;
+      if (filters.proxMin > 1 && (p.proximity || 1) < filters.proxMin) return false;
+      if (filters.statuses.length && filters.statuses.indexOf(p.status) === -1) return false;
+      return true;
+    });
+  }
+
+  function sortList(list) {
+    var s = filters.sort;
+    var c = list.slice();
+    if (s === "prioridade") c.sort(function (a, b) { return priority(b) - priority(a); });
+    else if (s === "seguidores") c.sort(function (a, b) { return (b.followers || 0) - (a.followers || 0); });
+    else if (s === "proximidade") c.sort(function (a, b) { return (b.proximity || 0) - (a.proximity || 0); });
+    else if (s === "nome") c.sort(function (a, b) { return a.name.localeCompare(b.name, "pt"); });
+    else if (s === "recentes") c.sort(function (a, b) { return (b.createdAt || 0) - (a.createdAt || 0); });
+    return c;
+  }
+
+  /* ---------- render ---------- */
+  function initials(name) {
+    var parts = String(name || "?").trim().split(/\s+/);
+    return ((parts[0] || "")[0] || "") + (parts.length > 1 ? (parts[parts.length - 1][0] || "") : "");
+  }
+
+  function renderSummary(list) {
+    var total = list.length;
+    var avg = total ? Math.round(list.reduce(function (s, p) { return s + priority(p); }, 0) / total) : 0;
+    var byStatus = function (st) { return list.filter(function (p) { return p.status === st; }).length; };
+    var focusCount = list.filter(function (p) { return (p.niches || []).some(isFocus); }).length;
+    var focusPct = total ? Math.round(focusCount / total * 100) : 0;
+    var closed = list.filter(function (p) { return p.status === "Fechado"; });
+    var ringsToShip = closed.reduce(function (s, p) { return s + (p.ringQty || 1); }, 0);
+    var pendingAddr = closed.filter(function (p) { return !(p.address || "").trim(); }).length;
+    var cells = [
+      ["Na lista", total + "", ""],
+      ["Prioridade média", avg + "", ""],
+      ["A contatar", byStatus("A contatar") + "", ""],
+      ["Em conversa", byStatus("Em conversa") + "", ""],
+      ["Fechados", closed.length + " ", (ringsToShip ? "<small>· " + ringsToShip + (ringsToShip === 1 ? " anel" : " anéis") + "</small>" : "")],
+      ["Nicho foco", focusCount + " ", "<small>· " + focusPct + "%</small>"]
+    ];
+    if (pendingAddr) cells.push(["Endereço pendente", pendingAddr + "", ""]);
+    $("#summary").innerHTML = cells.map(function (c) {
+      return '<div class="stat"><div class="k">' + esc(c[0]) + '</div><div class="v">' + esc(c[1]) + c[2] + '</div></div>';
+    }).join("");
+  }
+
+  function shipHTML(p) {
+    if (p.status !== "Fechado") return "";
+    var specs = [];
+    if (p.ringSize) specs.push('<b>Tam.</b>' + esc(p.ringSize));
+    if (p.ringColor) specs.push('<b>Cor</b>' + esc(p.ringColor));
+    specs.push('<b>Qtd</b>' + (p.ringQty || 1));
+    var addr = (p.address || "").trim();
+    return '<div class="ship">' +
+      '<div class="ship-h">Envio do anel</div>' +
+      '<div class="ship-line">' + specs.join('<span class="dot-sep">·</span>') + '</div>' +
+      (addr
+        ? '<div class="ship-addr">' + esc(addr) + '</div>'
+        : '<div class="ship-addr pending">Endereço pendente</div>') +
+      '</div>';
+  }
+
+  function cardHTML(p) {
+    var score = priority(p);
+    var C = 2 * Math.PI * 20;
+    var off = C * (1 - score / 100);
+    var tags = (p.niches || []).map(function (n) {
+      return '<span class="tag' + (isFocus(n) ? " focus" : "") + '">' + esc(n) + '</span>';
+    }).join("");
+    var pips = "";
+    for (var i = 1; i <= 5; i++) pips += '<i class="' + (i <= (p.proximity || 0) ? "on" : "") + '"></i>';
+    var statusOpts = STATUSES.map(function (s) {
+      return '<option' + (s === p.status ? " selected" : "") + '>' + esc(s) + '</option>';
+    }).join("");
+    var metaBits = [
+      esc(p.gender || "—"),
+      (p.age != null ? p.age + " anos" : null),
+      esc(tierOf(p.followers)),
+      '<span class="mono">' + fmtFollowers(p.followers) + '</span> seg.'
+    ].filter(Boolean).join('<span class="dot-sep">·</span>');
+
+    return '' +
+      '<article class="card ' + (STATUS_CLASS[p.status] || "") + '" data-id="' + esc(p.id) + '" tabindex="0" role="button" aria-label="Editar ' + esc(p.name) + '">' +
+        '<div class="card-top">' +
+          '<div class="avatar">' +
+            '<svg viewBox="0 0 46 46" aria-hidden="true">' +
+              '<circle class="track" cx="23" cy="23" r="20"/>' +
+              '<circle class="arc" cx="23" cy="23" r="20" transform="rotate(-90 23 23)" ' +
+                'style="stroke-dasharray:' + C.toFixed(1) + ';stroke-dashoffset:' + off.toFixed(1) + '"/>' +
+            '</svg>' +
+            '<b>' + esc(initials(p.name).toUpperCase()) + '</b>' +
+          '</div>' +
+          '<div class="who">' +
+            '<div class="name">' + esc(p.name) + '</div>' +
+            (p.handle ? '<div class="handle">' + esc(p.handle) + '</div>' : '') +
+          '</div>' +
+          '<div class="prio"><div class="num">' + score + '</div><div class="lbl">Prioridade</div></div>' +
+        '</div>' +
+        '<div class="meta">' + metaBits + '</div>' +
+        (tags ? '<div class="tags">' + tags + '</div>' : '') +
+        '<div class="prox"><span class="pips" aria-hidden="true">' + pips + '</span>' +
+          '<span class="plabel">' + (p.proximity || 1) + ' · ' + esc(PROX_LABELS[p.proximity || 1]) + '</span></div>' +
+        (p.note ? '<div class="note">' + esc(p.note) + '</div>' : '') +
+        shipHTML(p) +
+        '<div class="card-foot">' +
+          '<select class="statussel" data-status-for="' + esc(p.id) + '" aria-label="Etapa de ' + esc(p.name) + '">' + statusOpts + '</select>' +
+          '<button class="icon-btn" data-edit="' + esc(p.id) + '" type="button" aria-label="Editar">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
+          '</button>' +
+          '<button class="icon-btn danger" data-del="' + esc(p.id) + '" type="button" aria-label="Excluir">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>' +
+          '</button>' +
+        '</div>' +
+      '</article>';
+  }
+
+  function render() {
+    var filtered = applyFilters();
+    var list = sortList(filtered);
+    renderSummary(filtered);
+    $("#cShown").textContent = filtered.length;
+    $("#cTotal").textContent = prospects.length;
+
+    var grid = $("#grid");
+    if (!list.length) {
+      grid.innerHTML = '<div class="empty"><b>Nenhum prospect encontrado</b>' +
+        (prospects.length ? "Ajuste os filtros ou limpe a busca." : "Clique em “Novo prospect” para começar.") + '</div>';
+      return;
+    }
+    grid.innerHTML = list.map(cardHTML).join("");
+  }
+
+  /* ---------- grid interactions ---------- */
+  $("#grid").addEventListener("click", function (e) {
+    var del = e.target.closest("[data-del]");
+    if (del) { e.stopPropagation(); removeProspect(del.dataset.del); return; }
+    var edit = e.target.closest("[data-edit]");
+    if (edit) { e.stopPropagation(); openForm(edit.dataset.edit); return; }
+    if (e.target.closest(".statussel")) return;
+    var card = e.target.closest(".card");
+    if (card) openForm(card.dataset.id);
+  });
+  $("#grid").addEventListener("keydown", function (e) {
+    if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains("card")) {
+      e.preventDefault(); openForm(e.target.dataset.id);
+    }
+  });
+  $("#grid").addEventListener("change", function (e) {
+    var sel = e.target.closest("[data-status-for]");
+    if (!sel) return;
+    var p = prospects.find(function (x) { return x.id === sel.dataset.statusFor; });
+    if (p) { p.status = sel.value; save(); render(); toast("Etapa atualizada: " + p.name); }
+  });
+
+  function removeProspect(id) {
+    var p = prospects.find(function (x) { return x.id === id; });
+    if (!p) return;
+    if (!confirm("Excluir “" + p.name + "” da lista?")) return;
+    prospects = prospects.filter(function (x) { return x.id !== id; });
+    save(); render(); toast("Prospect excluído");
+  }
+
+  /* ---------- form / dialog ---------- */
+  var dlg = $("#dlg"), form = $("#form"), editingId = null;
+
+  NICHES.forEach(function (n) {
+    buildChip($("#iNiches"), n, false, function () {}, isFocus(n));
+  });
+  STATUSES.forEach(function (s) {
+    var o = document.createElement("option"); o.textContent = s; $("#iStatus").appendChild(o);
+  });
+  $("#iProx").addEventListener("input", function () {
+    $("#iProxLbl").textContent = this.value + " · " + PROX_LABELS[this.value];
+  });
+  function syncShip() {
+    var closed = $("#iStatus").value === "Fechado";
+    $("#shipForm").classList.toggle("active", closed);
+    $("#shipNote").style.display = closed ? "none" : "";
+  }
+  $("#iStatus").addEventListener("change", syncShip);
+
+  function setFormNiches(sel) {
+    $$("#iNiches .chip").forEach(function (c) {
+      c.setAttribute("aria-pressed", sel.indexOf(c.textContent) !== -1 ? "true" : "false");
+    });
+  }
+  function getFormNiches() {
+    return $$('#iNiches .chip[aria-pressed="true"]').map(function (c) { return c.textContent; });
+  }
+
+  function openForm(id) {
+    editingId = id || null;
+    var p = id ? prospects.find(function (x) { return x.id === id; }) : null;
+    $("#dlgTitle").textContent = p ? "Editar prospect" : "Novo prospect";
+    $("#btnSave").textContent = p ? "Salvar alterações" : "Adicionar";
+    $("#btnDelete").style.visibility = p ? "visible" : "hidden";
+    $("#iName").value = p ? p.name : "";
+    $("#iHandle").value = p ? (p.handle || "") : "";
+    $("#iPlatform").value = p ? (p.platform || "") : "";
+    $("#iGender").value = p ? (p.gender || "Mulher") : "Mulher";
+    $("#iAge").value = p && p.age != null ? p.age : "";
+    $("#iFollowers").value = p && p.followers != null ? p.followers : "";
+    $("#iStatus").value = p ? p.status : "A contatar";
+    $("#iProx").value = p ? (p.proximity || 1) : 1;
+    $("#iProxLbl").textContent = $("#iProx").value + " · " + PROX_LABELS[$("#iProx").value];
+    $("#iNote").value = p ? (p.note || "") : "";
+    $("#iAddress").value = p ? (p.address || "") : "";
+    $("#iRingSize").value = p ? (p.ringSize || "") : "";
+    $("#iRingColor").value = p ? (p.ringColor || "") : "";
+    $("#iRingQty").value = p && p.ringQty != null ? p.ringQty : 1;
+    setFormNiches(p ? (p.niches || []) : []);
+    syncShip();
+    dlg.showModal();
+    setTimeout(function () { $("#iName").focus(); }, 30);
+  }
+
+  form.addEventListener("submit", function (e) {
+    var action = (e.submitter && e.submitter.value) || "cancel";
+    if (action !== "save") return; // cancel/close: let dialog close
+    e.preventDefault();
+    var name = $("#iName").value.trim();
+    if (!name) { $("#iName").focus(); return; }
+    var data = {
+      name: name,
+      handle: $("#iHandle").value.trim(),
+      platform: $("#iPlatform").value,
+      gender: $("#iGender").value,
+      age: parseNum($("#iAge").value),
+      followers: parseNum($("#iFollowers").value) || 0,
+      proximity: parseInt($("#iProx").value, 10),
+      status: $("#iStatus").value,
+      note: $("#iNote").value.trim(),
+      niches: getFormNiches(),
+      address: $("#iAddress").value.trim(),
+      ringSize: $("#iRingSize").value,
+      ringColor: $("#iRingColor").value,
+      ringQty: Math.max(1, parseNum($("#iRingQty").value) || 1)
+    };
+    if (editingId) {
+      var p = prospects.find(function (x) { return x.id === editingId; });
+      if (p) Object.assign(p, data);
+      toast("Alterações salvas");
+    } else {
+      data.id = uid();
+      data.createdAt = Date.now();
+      prospects.unshift(data);
+      toast("Prospect adicionado");
+    }
+    save(); render();
+    dlg.close();
+  });
+
+  $("#btnDelete").addEventListener("click", function () {
+    if (!editingId) return;
+    var p = prospects.find(function (x) { return x.id === editingId; });
+    if (!p || !confirm("Excluir “" + p.name + "” da lista?")) return;
+    prospects = prospects.filter(function (x) { return x.id !== editingId; });
+    save(); render(); dlg.close(); toast("Prospect excluído");
+  });
+
+  $("#btnNew").addEventListener("click", function () { openForm(null); });
+
+  /* ---------- export / import ---------- */
+  var downloadsNs = null, downloadsTried = false;
+  function getDownloads() {
+    if (downloadsTried) return Promise.resolve(downloadsNs);
+    downloadsTried = true;
+    try {
+      if (window.claude && window.claude.use) {
+        return window.claude.use("downloads").then(function (d) { downloadsNs = d; return d; }).catch(function () { return null; });
+      }
+    } catch (e) { /* ignore */ }
+    return Promise.resolve(null);
+  }
+
+  $("#btnExport").addEventListener("click", function () {
+    var json = JSON.stringify(prospects, null, 2);
+    getDownloads().then(function (d) {
+      if (d) {
+        d.save({ filename: "radar-halo-" + new Date().toISOString().slice(0, 10) + ".json", data: json })
+          .then(function () { toast("Backup salvo"); })
+          .catch(function (err) {
+            if (err && err.code === "declined") return;
+            copyFallback(json);
+          });
+      } else {
+        copyFallback(json);
+      }
+    });
+  });
+  function copyFallback(json) {
+    // Fora do runtime do Claude (ex.: GitHub Pages), baixa um arquivo de verdade.
+    if (!window.claude) {
+      try {
+        var blob = new Blob([json], { type: "application/json" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "radar-halo-" + new Date().toISOString().slice(0, 10) + ".json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        toast("Backup baixado");
+        return;
+      } catch (e) { /* bloqueado — tenta a área de transferência */ }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(json).then(
+        function () { toast("JSON copiado para a área de transferência"); },
+        function () { showRaw(json); }
+      );
+    } else { showRaw(json); }
+  }
+  function showRaw(json) {
+    window.prompt("Copie o JSON de backup:", json);
+  }
+
+  $("#btnImport").addEventListener("click", function () {
+    var inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = "application/json,.json";
+    inp.addEventListener("change", function () {
+      var f = inp.files && inp.files[0];
+      if (!f) return;
+      var r = new FileReader();
+      r.onload = function () {
+        try {
+          var data = JSON.parse(r.result);
+          if (!Array.isArray(data)) throw new Error("formato");
+          var clean = data.filter(function (x) { return x && x.name; }).map(function (x) {
+            return {
+              id: x.id || uid(),
+              name: String(x.name).slice(0, 80),
+              handle: x.handle || "", platform: x.platform || "",
+              gender: x.gender || "Outro",
+              age: x.age != null ? parseNum(x.age) : null,
+              niches: Array.isArray(x.niches) ? x.niches : [],
+              followers: parseNum(x.followers) || 0,
+              proximity: Math.min(5, Math.max(1, parseInt(x.proximity, 10) || 1)),
+              status: STATUSES.indexOf(x.status) !== -1 ? x.status : "A contatar",
+              note: x.note || "",
+              address: x.address || "",
+              ringSize: x.ringSize || "",
+              ringColor: x.ringColor || "",
+              ringQty: parseNum(x.ringQty) || 1,
+              createdAt: x.createdAt || Date.now()
+            };
+          });
+          if (!clean.length) { toast("Nenhum prospect válido no arquivo"); return; }
+          if (!confirm("Substituir a lista atual (" + prospects.length + ") por " + clean.length + " prospects do arquivo?")) return;
+          prospects = clean;
+          save(); render();
+          toast(clean.length + " prospects importados");
+        } catch (e) {
+          toast("Arquivo inválido — esperado um JSON exportado aqui");
+        }
+      };
+      r.readAsText(f);
+    });
+    inp.click();
+  });
+
+  /* ---------- go ---------- */
+  load();
+  render();
+})();
+</script>
