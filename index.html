@@ -3,6 +3,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
 <style>
   *, *::before, *::after { box-sizing: border-box; }
@@ -603,6 +604,19 @@
 (function () {
   "use strict";
 
+  /* =================================================================
+     CONFIGURAÇÃO DO SUPABASE — cole os 2 valores do seu projeto:
+     Supabase → Project Settings → API
+       • Project URL          -> SUPABASE_URL
+       • Project API keys: anon / public  -> SUPABASE_ANON_KEY
+     (a chave "anon" pode ficar no código — ela é pública por design)
+     ================================================================= */
+  var SUPABASE_URL = "https://cxkkyetwzcpeucttxada.supabase.co";
+  var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4a2t5ZXR3emNwZXVjdHR4YWRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzNDU1ODQsImV4cCI6MjEwMzkyMTU4NH0.8jXdarFDwDFK8dL9_Uzv_NOYJ6PjqvpfWm4LgvYVsDY";
+
+  var CONFIGURED = SUPABASE_URL.indexOf("http") === 0 && SUPABASE_ANON_KEY.length > 20;
+  var sb = CONFIGURED ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
   var NICHES = [
     "Atleta", "Fitness / Treino", "Saúde / Medicina", "Bem-estar / Lifestyle",
     "Corrida", "Yoga / Pilates", "Nutrição",
@@ -673,38 +687,78 @@
     tiers: [], proxMin: 1, statuses: [], sort: "prioridade"
   };
 
-  /* ---------- dados (localStorage — sem servidor) ---------- */
-  var KEY = "halo.radar.v2";
-  function lsLoad() {
-    try { var r = localStorage.getItem(KEY); prospects = r ? (JSON.parse(r) || []) : []; }
-    catch (e) { prospects = []; }
-  }
-  function lsSave() {
-    try { localStorage.setItem(KEY, JSON.stringify(prospects)); } catch (e) { /* quota */ }
-  }
-  function removeLocal(id) { prospects = prospects.filter(function (x) { return x.id !== id; }); }
+  /* ---------- camada de dados (Supabase) ---------- */
+  var TABLE = "prospects";
 
-  function dbFetchAll() { lsLoad(); return Promise.resolve(); }
+  function payloadOf(obj) {
+    var p = {};
+    for (var k in obj) { if (obj.hasOwnProperty(k) && k !== "id") p[k] = obj[k]; }
+    return p;
+  }
+  function rowToProspect(row) {
+    var rec = Object.assign({}, row.payload || {});
+    rec.id = row.id;
+    if (rec.createdAt == null && row.created_at) rec.createdAt = new Date(row.created_at).getTime();
+    return rec;
+  }
+  function upsertLocal(rec) {
+    var i = prospects.findIndex(function (x) { return x.id === rec.id; });
+    if (i === -1) prospects.push(rec); else prospects[i] = rec;
+  }
+  function removeLocal(id) {
+    prospects = prospects.filter(function (x) { return x.id !== id; });
+  }
+
+  function dbFetchAll() {
+    return sb.from(TABLE).select("id,payload,created_at").order("created_at", { ascending: true })
+      .then(function (res) {
+        if (res.error) throw res.error;
+        prospects = (res.data || []).map(rowToProspect);
+      });
+  }
   function dbInsert(obj) {
-    obj.id = uid();
-    prospects.unshift(obj);
-    lsSave();
-    return Promise.resolve(obj);
+    return sb.from(TABLE).insert({ payload: payloadOf(obj) }).select("id,payload,created_at").single()
+      .then(function (res) {
+        if (res.error) throw res.error;
+        var rec = rowToProspect(res.data);
+        upsertLocal(rec);
+        return rec;
+      });
   }
   function dbInsertMany(arr) {
-    arr.forEach(function (o) { if (!o.id) o.id = uid(); prospects.push(o); });
-    lsSave();
-    return Promise.resolve(arr.length);
+    var rows = arr.map(function (o) { return { payload: payloadOf(o) }; });
+    return sb.from(TABLE).insert(rows).select("id,payload,created_at")
+      .then(function (res) {
+        if (res.error) throw res.error;
+        (res.data || []).map(rowToProspect).forEach(upsertLocal);
+        return res.data ? res.data.length : 0;
+      });
   }
   function dbUpdate(id, obj) {
-    var i = prospects.findIndex(function (x) { return x.id === id; });
-    if (i !== -1) prospects[i] = Object.assign({}, prospects[i], obj, { id: id });
-    lsSave();
-    return Promise.resolve();
+    return sb.from(TABLE).update({ payload: payloadOf(obj) }).eq("id", id)
+      .then(function (res) { if (res.error) throw res.error; });
   }
-  function dbDelete(id) { removeLocal(id); lsSave(); return Promise.resolve(); }
-  function subscribeRealtime() { /* sem realtime nesta versão */ }
-  function dbError(e) { console.error(e); toast("Erro: " + ((e && e.message) || "")); }
+  function dbDelete(id) {
+    return sb.from(TABLE).delete().eq("id", id)
+      .then(function (res) { if (res.error) throw res.error; });
+  }
+
+  var rtChannel = null;
+  function subscribeRealtime() {
+    if (rtChannel) return;
+    rtChannel = sb.channel("prospects-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: TABLE }, function (p) {
+        if (p.eventType === "DELETE") { removeLocal(p.old.id); }
+        else { upsertLocal(rowToProspect(p.new)); }
+        render();
+      })
+      .subscribe();
+  }
+
+  function dbError(e) {
+    console.error(e);
+    toast("Erro ao salvar: " + ((e && e.message) || "sem conexão"));
+  }
 
   /* ---------- toast ---------- */
   var toastEl = $("#toast"), toastT;
@@ -1214,10 +1268,66 @@
     inp.click();
   });
 
-  /* ---------- boot ---------- */
-  $("#gate").hidden = true;
-  $("#app").hidden = false;
-  var _lo = $("#btnLogout"); if (_lo && _lo.parentNode) _lo.parentNode.removeChild(_lo);
-  dbFetchAll().then(function () { render(); });
+  /* ---------- auth gate + boot ---------- */
+  var gate = $("#gate"), app = $("#app"), gateErr = $("#gateErr"), gateBtn = $("#gateBtn");
+  var booted = false;
+
+  function showGate() {
+    app.hidden = true;
+    gate.hidden = false;
+  }
+  function bootApp() {
+    if (booted) return;
+    booted = true;
+    gate.hidden = true;
+    app.hidden = false;
+    dbFetchAll().then(function () {
+      render();
+      subscribeRealtime();
+    }, function (e) { dbError(e); render(); });
+  }
+
+  if (!CONFIGURED) {
+    showGate();
+    $("#gateForm").innerHTML =
+      '<div class="gate-brand"><span class="mark"><svg viewBox="0 0 46 24"><g fill="none" stroke="currentColor" stroke-width="2.4">' +
+      '<circle cx="12" cy="12" r="8.6"/><circle cx="31" cy="12" r="8.6"/><path d="M33 15.5l6 6.5" stroke-linecap="round"/></g></svg></span><b>HALO <i>CORP</i></b></div>' +
+      '<p class="sub">Configuração pendente</p>' +
+      '<p class="gate-note">Falta colar a <b>Project URL</b> e a <b>chave anon</b> do Supabase ' +
+      'no início do &lt;script&gt; (procure por <code>COLE_AQUI</code>) e publicar de novo.</p>';
+  } else {
+    $("#gateForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      gateErr.textContent = "";
+      gateBtn.disabled = true;
+      gateBtn.textContent = "Entrando…";
+      sb.auth.signInWithPassword({
+        email: $("#gateEmail").value.trim(),
+        password: $("#gatePass").value
+      }).then(function (res) {
+        gateBtn.disabled = false;
+        gateBtn.textContent = "Entrar";
+        if (res.error) { gateErr.textContent = "E-mail ou senha incorretos."; return; }
+        $("#gatePass").value = "";
+        bootApp();
+      });
+    });
+
+    sb.auth.getSession().then(function (res) {
+      if (res.data && res.data.session) bootApp();
+      else showGate();
+    });
+
+    sb.auth.onAuthStateChange(function (event) {
+      if (event === "SIGNED_OUT") {
+        if (rtChannel) { sb.removeChannel(rtChannel); rtChannel = null; }
+        booted = false;
+        prospects = [];
+        showGate();
+      }
+    });
+
+    $("#btnLogout").addEventListener("click", function () { sb.auth.signOut(); });
+  }
 })();
 </script>
