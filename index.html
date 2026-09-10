@@ -247,6 +247,8 @@
   .ship-line b { font-weight: 700; color: var(--t3); font-size: 9.5px; text-transform: uppercase; letter-spacing: .04em; margin-right: 3px; }
   .ship-addr { font-size: 12px; color: var(--t2); white-space: pre-wrap; }
   .ship-addr.pending { color: var(--err); font-style: italic; }
+  .ship-track { color: var(--blue); font-weight: 600; text-decoration: none; }
+  .ship-track:hover { text-decoration: underline; }
 
   .empty { grid-column: 1 / -1; text-align: center; padding: 60px 20px; border: 1px dashed var(--line); border-radius: var(--r); color: var(--t2); }
   .empty b { display: block; font-family: var(--disp); font-weight: 700; font-size: 19px; color: var(--t1); margin-bottom: 6px; }
@@ -568,9 +570,25 @@
             </select>
           </div>
         </div>
-        <div class="form-row" style="max-width:150px">
-          <label for="iRingQty">Quantidade de anéis</label>
-          <input class="inp" id="iRingQty" type="number" inputmode="numeric" min="1" max="50" value="1">
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="iRingQty">Quantidade de anéis</label>
+            <input class="inp" id="iRingQty" type="number" inputmode="numeric" min="1" max="50" value="1">
+          </div>
+          <div class="form-row">
+            <label for="iShipDate">Enviado em</label>
+            <input class="inp" id="iShipDate" type="date">
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="iArriveDate">Chegou em</label>
+            <input class="inp" id="iArriveDate" type="date">
+          </div>
+          <div class="form-row">
+            <label for="iTracking">Link de rastreio</label>
+            <input class="inp" id="iTracking" type="url" inputmode="url" placeholder="https://…" autocomplete="off">
+          </div>
         </div>
       </div>
 
@@ -620,10 +638,11 @@
   var NICHES = [
     "Atleta", "Fitness / Treino", "Saúde / Medicina", "Bem-estar / Lifestyle",
     "Corrida", "Yoga / Pilates", "Nutrição",
+    "Fashion", "Beleza / Skincare", "Tech / Gadgets", "Viagem", "Maternidade / Família",
     "Blogueiro(a)", "Mídia / Imprensa", "Podcaster", "Empreendedor(a)", "Outro"
   ];
   var FOCUS = ["Atleta", "Fitness / Treino", "Saúde / Medicina", "Bem-estar / Lifestyle", "Corrida", "Yoga / Pilates", "Nutrição"];
-  var ADJACENT = ["Blogueiro(a)", "Mídia / Imprensa", "Podcaster"];
+  var ADJACENT = ["Fashion", "Tech / Gadgets", "Blogueiro(a)", "Mídia / Imprensa", "Podcaster"];
   var STATUSES = ["A contatar", "Contatado", "Em conversa", "Fechado", "Descartado"];
   var STATUS_CLASS = { "A contatar": "status-A", "Contatado": "status-C", "Em conversa": "status-E", "Fechado": "status-F", "Descartado": "status-D" };
   var PROX_LABELS = { 1: "Não conheço", 2: "Conexão em comum", 3: "Já interagimos online", 4: "Já conversamos", 5: "Relação próxima" };
@@ -904,9 +923,23 @@
       ["Nicho foco", focusCount + " ", "<small>· " + focusPct + "%</small>"]
     ];
     if (pendingAddr) cells.push(["Endereço pendente", pendingAddr + "", ""]);
+    if (closed.length) {
+      var arrived = closed.filter(function (p) { return (p.arriveDate || "").trim(); }).length;
+      var inTransit = closed.filter(function (p) { return (p.shipDate || "").trim() && !(p.arriveDate || "").trim(); }).length;
+      cells.push(["Entregues", arrived + " ", (inTransit ? "<small>· " + inTransit + " a caminho</small>" : "")]);
+    }
     $("#summary").innerHTML = cells.map(function (c) {
       return '<div class="stat"><div class="k">' + esc(c[0]) + '</div><div class="v">' + esc(c[1]) + c[2] + '</div></div>';
     }).join("");
+  }
+
+  function fmtDate(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || ""));
+    return m ? m[3] + "/" + m[2] : "";
+  }
+  function safeUrl(u) {
+    u = String(u || "").trim();
+    return /^https?:\/\//i.test(u) ? u : "";
   }
 
   function shipHTML(p) {
@@ -916,12 +949,19 @@
     if (p.ringColor) specs.push('<b>Cor</b>' + esc(p.ringColor));
     specs.push('<b>Qtd</b>' + (p.ringQty || 1));
     var addr = (p.address || "").trim();
+    var sent = fmtDate(p.shipDate), arr = fmtDate(p.arriveDate), track = safeUrl(p.trackingUrl);
+    var log = [];
+    if (sent) log.push('<b>Enviado</b>' + sent);
+    if (arr) log.push('<b>Chegou</b>' + arr);
+    else if (sent) log.push('a caminho');
+    if (track) log.push('<a class="ship-track" href="' + esc(track) + '" target="_blank" rel="noopener">rastrear ↗</a>');
     return '<div class="ship">' +
       '<div class="ship-h">Envio do anel</div>' +
       '<div class="ship-line">' + specs.join('<span class="dot-sep">·</span>') + '</div>' +
       (addr
         ? '<div class="ship-addr">' + esc(addr) + '</div>'
         : '<div class="ship-addr pending">Endereço pendente</div>') +
+      (log.length ? '<div class="ship-line">' + log.join('<span class="dot-sep">·</span>') + '</div>' : '') +
       '</div>';
   }
 
@@ -1015,7 +1055,7 @@
     if (del) { e.stopPropagation(); removeProspect(del.dataset.del); return; }
     var edit = e.target.closest("[data-edit]");
     if (edit) { e.stopPropagation(); openForm(edit.dataset.edit); return; }
-    if (e.target.closest(".statussel")) return;
+    if (e.target.closest(".statussel") || e.target.closest(".ship-track")) return;
     var card = e.target.closest(".card");
     if (card) openForm(card.dataset.id);
   });
@@ -1094,6 +1134,9 @@
     $("#iRingSize").value = p ? (p.ringSize || "") : "";
     $("#iRingColor").value = p ? (p.ringColor || "") : "";
     $("#iRingQty").value = p && p.ringQty != null ? p.ringQty : 1;
+    $("#iShipDate").value = p ? (p.shipDate || "") : "";
+    $("#iArriveDate").value = p ? (p.arriveDate || "") : "";
+    $("#iTracking").value = p ? (p.trackingUrl || "") : "";
     var ps = (p && p.posts) || {};
     $("#iPosted").checked = !!(p && p.posted);
     $("#iPostStory").value = ps.story || 0;
@@ -1128,6 +1171,9 @@
       ringSize: $("#iRingSize").value,
       ringColor: $("#iRingColor").value,
       ringQty: Math.max(1, parseNum($("#iRingQty").value) || 1),
+      shipDate: $("#iShipDate").value,
+      arriveDate: $("#iArriveDate").value,
+      trackingUrl: $("#iTracking").value.trim(),
       posted: $("#iPosted").checked,
       posts: {
         story: Math.max(0, parseNum($("#iPostStory").value) || 0),
@@ -1242,6 +1288,9 @@
               address: x.address || "",
               ringSize: x.ringSize || "",
               ringColor: x.ringColor || "",
+              shipDate: x.shipDate || "",
+              arriveDate: x.arriveDate || "",
+              trackingUrl: x.trackingUrl || "",
               ringQty: parseNum(x.ringQty) || 1,
               posted: !!x.posted,
               posts: (x.posts && typeof x.posts === "object") ? {
